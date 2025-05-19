@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Elite Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #121212;
+      --fg: white;
+      --btn: #00bcd4;
+      --accent: #4caf50;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--fg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .calculator {
+      background: #1e1e1e;
+      border-radius: 20px;
+      box-shadow: 0 0 20px var(--btn);
+      padding: 20px;
+      width: 360px;
+      max-height: 95vh;
+      overflow: hidden;
+    }
+    .display {
+      width: 100%;
+      height: 60px;
+      font-size: 26px;
+      text-align: right;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      background-color: #263238;
+      color: white;
+      margin-bottom: 10px;
+      box-shadow: inset 0 0 5px #444;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    button {
+      font-size: 18px;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background-color: var(--btn);
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover { background-color: #008c9e; }
+    .equal { background-color: var(--accent); grid-column: span 2; }
+    .clear { background-color: #e53935; }
+    .theme, .extra {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    select, .extra button {
+      padding: 6px 10px;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .history {
+      height: 100px;
+      overflow-y: auto;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #ffffff;
+      color: #000;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 400px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-content h2 { margin-top: 0; }
+    .modal-content button {
+      margin-top: 15px;
+      background: #e53935;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <input type="text" id="display" class="display" readonly />
+    <div class="buttons">
+      <button onclick="press('(')">(</button>
+      <button onclick="press(')')">)</button>
+      <button onclick="press('%')">%</button>
+      <button onclick="clearDisplay()" class="clear">C</button>
+
+      <button onclick="press('7')">7</button>
+      <button onclick="press('8')">8</button>
+      <button onclick="press('9')">9</button>
+      <button onclick="press('/')">÷</button>
+
+      <button onclick="press('4')">4</button>
+      <button onclick="press('5')">5</button>
+      <button onclick="press('6')">6</button>
+      <button onclick="press('*')">×</button>
+
+      <button onclick="press('1')">1</button>
+      <button onclick="press('2')">2</button>
+      <button onclick="press('3')">3</button>
+      <button onclick="press('-')">−</button>
+
+      <button onclick="press('0')">0</button>
+      <button onclick="press('.')">.</button>
+      <button onclick="calculate()" class="equal">=</button>
+      <button onclick="press('+')">+</button>
+
+      <button onclick="press('√(')">√</button>
+      <button onclick="press('^')">^</button>
+      <button onclick="press('π')">π</button>
+      <button onclick="press('**2')">x²</button>
+
+      <button onclick="press('sin(')">sin</button>
+      <button onclick="press('cos(')">cos</button>
+      <button onclick="press('tan(')">tan</button>
+      <button onclick="press('log(')">log</button>
+    </div>
+
+    <div class="extra">
+      <button onclick="startVoice()">🎙️ Voice</button>
+      <button onclick="clearHistory()">🗑️ Clear History</button>
+      <button onclick="showHelp()">❓ Help</button>
+    </div>
+
+    <div class="theme">
+      <select onchange="changeTheme(this.value)">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="neon">Neon</option>
+        <option value="cyber">Cyber</option>
+      </select>
+      <button onclick="installApp()">Install App</button>
+    </div>
+
+    <div class="history" id="history">
+      <b>History:</b><br />
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <div id="helpModal" class="modal">
+    <div class="modal-content">
+      <h2>📘 How to Use</h2>
+      <ul>
+        <li>Use buttons or keyboard to type equations</li>
+        <li>Click <b>=</b> or press <b>Enter</b> to evaluate</li>
+        <li>Click <b>C</b> or press <b>Backspace</b> to clear</li>
+        <li>Click <b>🎙️ Voice</b> and say commands like:</li>
+        <ul>
+          <li>“5 plus 6” → 5 + 6</li>
+          <li>“7 minus 3” → 7 - 3</li>
+          <li>“9 into 2” or “multiplied by” → 9 × 2</li>
+          <li>“10 divided by 5” → 10 ÷ 5</li>
+          <li>“square root of 16” → √(16)</li>
+          <li>“pi plus 2” → π + 2</li>
+          <li>“sin of 90” → sin(90)</li>
+          <li>“log of 1000” → log(1000)</li>
+        </ul>
+        <li>Click <b>🗑️ Clear History</b> to reset logs</li>
+        <li>Change <b>theme</b> from dropdown</li>
+        <li>Click <b>Install App</b> to use offline</li>
+      </ul>
+      <button onclick="closeHelp()">Close</button>
+    </div>
+  </div>
+
+  <audio id="clickSound" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
+  <script>
+    const display = document.getElementById('display');
+    const historyBox = document.getElementById('history');
+    const clickSound = document.getElementById('clickSound');
+    let deferredPrompt;
+
+    function press(val) {
+      clickSound.currentTime = 0;
+      clickSound.play();
+      display.value += val;
+    }
+
+    function clearDisplay() {
+      clickSound.play();
+      display.value = '';
+    }
+
+    function calculate() {
+      try {
+        clickSound.play();
+        let expr = display.value
+          .replace(/√/g, "Math.sqrt")
+          .replace(/π/g, "Math.PI")
+          .replace(/sin/g, "Math.sin")
+          .replace(/cos/g, "Math.cos")
+          .replace(/tan/g, "Math.tan")
+          .replace(/log/g, "Math.log10")
+          .replace(/\^/g, "**");
+        const result = eval(expr);
+        historyBox.innerHTML += `${display.value} = ${result}<br>`;
+        display.value = result;
+      } catch {
+        display.value = "Error";
+      }
+    }
+
+    function clearHistory() {
+      historyBox.innerHTML = "<b>History:</b><br />";
+      clickSound.play();
+    }
+
+    function changeTheme(theme) {
+      const root = document.documentElement;
+      switch (theme) {
+        case "light":
+          root.style.setProperty('--bg', '#f5f5f5');
+          root.style.setProperty('--fg', '#222');
+          root.style.setProperty('--btn', '#2196f3');
+          root.style.setProperty('--accent', '#4caf50');
+          break;
+        case "neon":
+          root.style.setProperty('--bg', '#0f0f0f');
+          root.style.setProperty('--fg', '#0ff');
+          root.style.setProperty('--btn', '#ff0');
+          root.style.setProperty('--accent', '#f0f');
+          break;
+        case "cyber":
+          root.style.setProperty('--bg', '#0d0d0d');
+          root.style.setProperty('--fg', '#39ff14');
+          root.style.setProperty('--btn', '#1aff66');
+          root.style.setProperty('--accent', '#00bfa5');
+          break;
+        default:
+          root.style.setProperty('--bg', '#121212');
+          root.style.setProperty('--fg', '#fff');
+          root.style.setProperty('--btn', '#00bcd4');
+          root.style.setProperty('--accent', '#4caf50');
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const key = e.key;
+      if ("0123456789+-*/().%^".includes(key)) press(key);
+      else if (key === "Enter") calculate();
+      else if (key === "Backspace") display.value = display.value.slice(0, -1);
+    });
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    function installApp() {
+      if (deferredPrompt) deferredPrompt.prompt();
+    }
+
+    function startVoice() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "en-US";
+      recognition.start();
+      recognition.onresult = function (event) {
+        const voiceInput = event.results[0][0].transcript.toLowerCase();
+        const expression = voiceInput
+          .replace(/plus/g, "+")
+          .replace(/minus/g, "-")
+          .replace(/times|multiplied by|into/g, "*")
+          .replace(/divided by/g, "/")
+          .replace(/square root of|sqrt of/g, "√(")
+          .replace(/pi/g, "π")
+          .replace(/log of/g, "log(")
+          .replace(/sin of/g, "sin(")
+          .replace(/cos of/g, "cos(")
+          .replace(/tan of/g, "tan(");
+        display.value = expression;
+        calculate();
+      };
+    }
+
+    function showHelp() {
+      document.getElementById('helpModal').style.display = 'flex';
+    }
+
+    function closeHelp() {
+      document.getElementById('helpModal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
